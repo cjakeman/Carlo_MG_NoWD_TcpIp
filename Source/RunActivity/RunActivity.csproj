@@ -162,6 +162,7 @@
     <Compile Include="Viewer3D\Processes\SoundProcess.cs" />
     <Compile Include="Viewer3D\Processes\UpdaterProcess.cs" />
     <Compile Include="Viewer3D\Processes\WatchdogProcess.cs" />
+    <Compile Include="Viewer3D\Processes\WebServerProcess.cs" />
     <Compile Include="Viewer3D\RenderFrame.cs" />
     <Compile Include="Viewer3D\RoadCars.cs" />
     <Compile Include="Viewer3D\RollingStock\MSTSDieselLocomotiveViewer.cs" />
@@ -187,6 +188,7 @@
     <Compile Include="Viewer3D\Viewer.cs" />
     <Compile Include="Viewer3D\Water.cs" />
     <Compile Include="Viewer3D\Weather.cs" />
+    <Compile Include="Viewer3D\WebServices\WebServer.cs" />
     <Compile Include="Viewer3D\Wire.cs" />
     <Compile Include="Viewer3D\World.cs" />
   </ItemGroup>
