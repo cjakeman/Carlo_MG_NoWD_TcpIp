@@ -95,7 +95,7 @@ namespace Orts.Viewer3D.Processes
 
             // 127.0.0.1 is a dummy, IPAddress.Any in WebServer.cs to accept any address
             // on the local Lan
-            port = 2150;
+            //port = 2150;
             webServer = new WebServer("127.0.0.1", port, 1, myWebContentPath);
             webServer.Run();
         }

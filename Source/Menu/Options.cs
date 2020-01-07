@@ -149,7 +149,8 @@ namespace ORTS
             checkDisableTCSScripts.Checked = Settings.DisableTCSScripts;
             checkEnableWatchdog.Checked = Settings.EnableWatchdog;
             checkRunAt32bit.Checked = Settings.RunAt32bit;
-
+            checkEnableWebServer.Checked = Settings.WebServer;
+            numericWebServerPort.Value = Settings.WebServerPort;
 
             // Audio tab
             checkMSTSBINSound.Checked = Settings.MSTSBINSound;
@@ -455,6 +456,8 @@ private async void OptionsForm_Shown(object sender, EventArgs e)
             Settings.DisableTCSScripts = checkDisableTCSScripts.Checked;
             Settings.EnableWatchdog = checkEnableWatchdog.Checked;
             Settings.RunAt32bit = checkRunAt32bit.Checked;
+            Settings.WebServer = checkEnableWebServer.Checked;
+            Settings.WebServerPort = (int)numericWebServerPort.Value;
 
             // Audio tab
             Settings.MSTSBINSound = checkMSTSBINSound.Checked;
@@ -771,5 +774,24 @@ private async void OptionsForm_Shown(object sender, EventArgs e)
             labelPerformanceTunerTarget.Enabled = checkPerformanceTuner.Checked;
         }
 
+        private void checkBox1_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void checkEnableWebServer_CheckedChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void numericUpDown1_ValueChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label29_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
