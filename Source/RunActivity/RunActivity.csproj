@@ -342,19 +342,6 @@
     <Content Include="Readme_ORNewYear_MG.txt">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
-    <Content Include="Viewer3D\WebServices\Web\css\hud.css" />
-    <Content Include="Viewer3D\WebServices\Web\css\sample.css" />
-    <Content Include="Viewer3D\WebServices\Web\css\trackmonitor.css" />
-    <Content Include="Viewer3D\WebServices\Web\HUD.html" />
-    <Content Include="Viewer3D\WebServices\Web\images\or_logo.png" />
-    <Content Include="Viewer3D\WebServices\Web\images\waverley.jpg" />
-    <Content Include="Viewer3D\WebServices\Web\images\zig-zag.jpg" />
-    <Content Include="Viewer3D\WebServices\Web\index - ApiSample.html" />
-    <Content Include="Viewer3D\WebServices\Web\index.html" />
-    <Content Include="Viewer3D\WebServices\Web\js\ApiSample.js" />
-    <Content Include="Viewer3D\WebServices\Web\js\ApiTrainInfo.js" />
-    <Content Include="Viewer3D\WebServices\Web\js\hud.js" />
-    <Content Include="Viewer3D\WebServices\Web\js\trackmonitor.js" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Orts.ExternalDevices\Orts.ExternalDevices.csproj">
@@ -427,6 +414,8 @@
     </PreBuildEvent>
     <PostBuildEvent>echo $Revision: 000 $&gt;Revision.txt
 date /t&gt;&gt;Revision.txt
-time /t&gt;&gt;Revision.txt</PostBuildEvent>
+time /t&gt;&gt;Revision.txt
+XCOPY "$(SolutionDir)RunActivity\Viewer3D\WebServices\Web" "$(TargetDir)Content\Web" /s /i /y
+    </PostBuildEvent>
   </PropertyGroup>
 </Project>
