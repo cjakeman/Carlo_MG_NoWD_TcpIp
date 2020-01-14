@@ -15,16 +15,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Open Rails.  If not, see <http://www.gnu.org/licenses/>.
 //
-// ===========================================================================================
-//      Open Rails Web Server
-//      The following files have been modified to accomodate the WebServer
-//          Game.cs
-//          HUDWindow.cs
-//          WebServerProcess.cs
-//          search for "WebServer" to find all occurrences
-//
-//      djr - 20171221
-// ===========================================================================================
+// Based on original work by Dan Reynolds 2017-12-21
 
 using System;
 using System.Collections.Generic;
@@ -40,9 +31,7 @@ using Orts.Simulation.Physics;
 
 namespace Orts.Viewer3D.WebServices
 {
-    // =================================================================
     // State object for reading client data asynchronously
-    // =================================================================
     public class StateObject
     {
         public Socket WorkSocket = null;                    // Client  socket.
@@ -50,9 +39,7 @@ namespace Orts.Viewer3D.WebServices
         public byte[] Buffer = new byte[BufferSize];        // Receive buffer.
     }
 
-    // ==================================================================
-    // 		class for holding HTTP Request data
-    // ==================================================================
+    // class for holding HTTP Request data
     public class HttpRequest
     {
         public Socket ClientSocket = null;
@@ -63,9 +50,7 @@ namespace Orts.Viewer3D.WebServices
         public Dictionary<string, string> Headers { get => headers; set => headers = value; }
     }
 
-    // ==================================================================
-    // 		class for holding HTTP Resonse data
-    // ==================================================================
+    // class for holding HTTP Resonse data
     public class HttpResponse
     {
         public Socket ClientSocket = null;
@@ -75,9 +60,7 @@ namespace Orts.Viewer3D.WebServices
         public byte[] byteContent;
     }
 
-    // ====================================================================
-    //  TCP/IP Sockets WebServer
-    // ====================================================================
+    // TCP/IP Sockets WebServer
     public class WebServer
     {
         private bool Running = false;
@@ -89,40 +72,32 @@ namespace Orts.Viewer3D.WebServices
         private int Port = 0;
         private int MaxConnections = 0;
 
-        // ===========================================================================================
-        // 		Thread signal.
-        // ===========================================================================================
+        // Thread signal.
         private static ManualResetEvent allDone = new ManualResetEvent(false);
 
-        // ===========================================================================================
-        // File exstensions this server will handle - any other extensions are returns as not found
-        // ===========================================================================================
+        // File extensions this server will handle - any other extensions are returns as not found
         private static Dictionary<string, string> extensions = new Dictionary<string, string>()
         {
-            { "htm",  "text/html" },
-            { "html", "text/html" },
-            { "txt",  "text/plain" },
-            { "css",  "text/css" },
-            { "xml",  "application/xml" },
-            { "js",   "application/javascript" },
-            { "json", "application/json" },
-            { "ico",  "image/x-icon" },
-            { "png",  "image/png" },
-            { "gif",  "image/gif" },
-            { "jpg",  "image/jpg" },
-            { "jpeg", "image/jpeg" }
+            { "HTM",  "text/html" },
+            { "HTML", "text/html" },
+            { "TXT",  "text/plain" },
+            { "CSS",  "text/css" },
+            { "XML",  "application/xml" },
+            { "JS",   "application/javascript" },
+            { "JSON", "application/json" },
+            { "ICO",  "image/x-icon" },
+            { "PNG",  "image/png" },
+            { "GIF",  "image/gif" },
+            { "JPG",  "image/jpg" },
+            { "JPEG", "image/jpeg" }
         };
 
         public Dictionary<string, string> Extensions { get => extensions; set => extensions = value; }
 
-        // ===========================================================================================
-        //      Viewer object from Viewer3D - needed for acces to Heads Up Display Data
-        // ===========================================================================================
+        // Viewer object from Viewer3D - needed for access to Heads Up Display Data
         public Viewer viewer;
 
-        // ===========================================================================================
-        //  	WebServer constructor
-        // ===========================================================================================
+        // WebServer constructor
         public WebServer(string ipAddr, int port, int maxConnections, string path)
         {
             ipAddress = IPAddress.Parse(ipAddr);
@@ -136,8 +111,6 @@ namespace Orts.Viewer3D.WebServices
             return;
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
         public void Run()
         {
             if (Running)
@@ -189,8 +162,6 @@ namespace Orts.Viewer3D.WebServices
             }
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
         public void acceptCallback(IAsyncResult ar)
         {
             // wjc if we stopped the thread just leave
@@ -198,9 +169,11 @@ namespace Orts.Viewer3D.WebServices
             {
                 // Signal the main thread to continue.
                 allDone.Set();
+
                 // Get the socket that handles the client request.
                 Socket listener = (Socket)ar.AsyncState;
                 Socket handler = listener.EndAccept(ar);
+
                 // Create the state object.
                 StateObject state = new StateObject();
                 state.WorkSocket = handler;
@@ -209,9 +182,7 @@ namespace Orts.Viewer3D.WebServices
             }
         }
 
-        // ===========================================================================================
-        // 		Main processing loop - read request and call  response functions
-        // ===========================================================================================
+        // Main processing loop - read request and call response functions
         public static void receiveCallback(IAsyncResult ar)
         {
             // Retrieve the state object and the handler socket
@@ -229,7 +200,7 @@ namespace Orts.Viewer3D.WebServices
             }
             catch (Exception e)
             {
-                Console.WriteLine("Exception instantiate StreamReader: " + e.Message);
+                Console.WriteLine("Exception instantiating StreamReader: " + e.Message);
                 return;
             }
             while (streamReader.Peek() > -1)
@@ -247,7 +218,7 @@ namespace Orts.Viewer3D.WebServices
                         ProcessGet(request, response);
                     }
                     else
-                        sendNotImplemented(response);
+                        SendRequestMethodNotImplemented(response);
                     return;
                 }
                 else if (request.Method.Equals(""))
@@ -267,7 +238,7 @@ namespace Orts.Viewer3D.WebServices
 
                     if (!request.Method.Equals("GET") && !request.Method.Equals("POST"))
                     {
-                        sendNotImplemented(response);
+                        SendRequestMethodNotImplemented(response);
                         return;
                     }
                 }
@@ -275,11 +246,11 @@ namespace Orts.Viewer3D.WebServices
                 {
                     try
                     {
-                        int seperator = lineRead.IndexOf(':');
-                        string heading = lineRead.Substring(0, seperator);
+                        int separator = lineRead.IndexOf(':');
+                        string heading = lineRead.Substring(0, separator);
                         heading = heading.Trim();
-                        ++seperator;
-                        string value = lineRead.Substring(seperator);
+                        ++separator;
+                        string value = lineRead.Substring(separator);
                         value = value.Trim();
                         request.Headers.Add(heading, value);
                     }
@@ -293,11 +264,9 @@ namespace Orts.Viewer3D.WebServices
                     break;
                 }
             }
-            sendServerError(response);
+            SendServerError(response);
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
         public void stop()
         {
             if (Running)
@@ -323,71 +292,111 @@ namespace Orts.Viewer3D.WebServices
             }
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
         private static void ProcessPost(HttpRequest request, HttpResponse response)
         {
-            request.URI = request.URI.Replace('\\', '/');
-            request.URI = request.URI.ToUpper();
-            if (!request.URI.StartsWith("/API/"))
+            // Convert "%20" to " " etc.
+            request.URI = WebUtility.HtmlDecode(request.URI);
+
+            var uri = request.URI.ToUpper();
+            if (uri.StartsWith("/API/") && uri.EndsWith("/CALL_API"))
             {
-                Console.WriteLine("Post Method - API Not Implemented [{0}]", request.URI);
-                sendNotImplemented(response);
+                ExecuteAPI(uri, request.Parameters, response);
                 return;
             }
-            response.strContent = ExecuteApi(request.URI, request.Parameters);
-            response.ContentType = "application/json";
-            sendOkResponse(response);
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
-        private static void ProcessGetAPI(HttpRequest request, HttpResponse response)
-        {
-            sendNotImplemented(response);
-        }
-
-        // ===========================================================================================
-        // ===========================================================================================
         private static void ProcessGet(HttpRequest request, HttpResponse response)
         {
-            request.URI = request.URI.Replace("/", "\\").Replace("\\..", "");
-            if (request.URI.StartsWith("/API/"))
+            // http://127.0.0.1:2150/API/HUD/hud.html
+            // or
+            // http://127.0.0.1:2150/API/HUD/ which will be extended to http://127.0.0.1:2150/API/HUD/index.html
+            //
+            // http://127.0.0.1:2150/API/HUD is not acceptable.
+
+            // Convert "%20" to " " etc.
+            request.URI = WebUtility.HtmlDecode(request.URI);
+
+            // Get any parameters
+            var requestParts = request.URI.Split('?');
+            var uri = requestParts[0].ToUpper();
+            var parameters = "";
+            if (requestParts.Length > 1)
+                parameters = requestParts[1];
+
+            // For efficiency, check for API first
+            if (uri.StartsWith("/API/") && uri.EndsWith("/CALL_API"))
             {
-                ProcessGetAPI(request, response);
+                ExecuteAPI(uri, parameters, response);
                 return;
             }
-            int length = request.URI.Length;
-            int start = request.URI.LastIndexOf('.');
-            if (start == -1)
+            else if (parameters != "")
             {
-                if (request.URI.Substring(length - 1, 1) != "\\")
-                    request.URI += "\\";
-                request.URI += "index.html";
+                SendApiBadlyFormed(response, request.URI);
+                return;
             }
-            start = request.URI.LastIndexOf('.');
-            length = request.URI.Length - start - 1;
-            string extension = request.URI.Substring(start + 1, length);
-            if (extensions.ContainsKey(extension))
+
+            SendFileContents(response, uri);
+        }
+        
+        private static void ExecuteAPI(string uri, string parameters, HttpResponse response)
+        {
+            var apiName = uri.Substring(0, uri.Length - "/CALL_API".Length);
+            Func<string, object> apiMethod;
+            if (!ApiDict.TryGetValue(apiName, out apiMethod))
             {
-                if (File.Exists(ContentPath + request.URI))
+                SendApiNotFound(response, uri);
+                return;
+            }
+
+            object result = apiMethod(parameters);
+            response.strContent = JsonConvert.SerializeObject(result, Formatting.Indented);
+            response.ContentType = "application/json";
+            SendOkResponse(response);
+        }
+
+        private static void SendFileContents(HttpResponse response, string uri)
+        {
+
+            // Convert URL to folder specification
+            var filePath = uri.Replace("/", @"\");
+
+            var fullFilePath = ContentPath + filePath;
+
+            if (!File.Exists(fullFilePath))
+            {
+                // Perhaps it's a folder
+                if (fullFilePath.EndsWith(@"\"))
                 {
-                    byte[] bytes = File.ReadAllBytes(ContentPath + request.URI);
-                    response.byteContent = new byte[bytes.Length];
-                    response.byteContent = bytes;
-                    response.ContentType = extensions[extension];
-                    sendOkResponse(response);
+                    // Append a default webpage
+                    fullFilePath += "index.html";
+                    if (!File.Exists(fullFilePath))
+                    {
+                        SendFileNotFound(response, ContentPath + filePath);
+                        return;
+                    }
                 }
-                else
-                    sendNotFound(response); // We don't support this extension. We are assuming that it doesn't exist.
             }
-            else
-                sendNotImplemented(response);
+
+            // Check the extension
+            var extension = Path.GetExtension(fullFilePath).ToUpper();
+
+            // Remove the leading "."
+            extension = extension.Replace(".", "");
+            if (!extensions.ContainsKey(extension))
+            {
+                SendExtensionNotImplemented(response, extension);
+                return;
+            }
+
+            // Get the file content
+            byte[] bytes = File.ReadAllBytes(fullFilePath);
+            response.byteContent = new byte[bytes.Length];
+            response.byteContent = bytes;
+            response.ContentType = extensions[extension];
+            SendOkResponse(response);
             return;
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
         private static void HTMLContent(HttpResponse response)
         {
             response.strContent = "<!doctype HTML>" +
@@ -400,47 +409,57 @@ namespace Orts.Viewer3D.WebServices
                                   "<h1>OpenRails WebServer</h1>" +
                                   "<div>" + response.ResponseCode + "</div>" + "" +
                                   "</body></html>";
-
             return;
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
-        private static void sendNotImplemented(HttpResponse response)
+        private static void SendRequestMethodNotImplemented(HttpResponse response)
         {
-            response.ResponseCode = "501 Not Implemented";
+            response.ResponseCode = $"501 Request method not implemented";
             HTMLContent(response);
             SendHttp(response);
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
-        private static void sendNotFound(HttpResponse response)
+        private static void SendExtensionNotImplemented(HttpResponse response, string extension)
         {
-            response.ResponseCode = "404 Not Found";
+            response.ResponseCode = $"501 Extension {extension} not implemented";
             HTMLContent(response);
             SendHttp(response);
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
-        private static void sendServerError(HttpResponse response)
+        private static void SendApiNotFound(HttpResponse response, string apiName)
         {
-            response.ResponseCode = "500 Internal Server Error";
+            response.ResponseCode = $"501 API {apiName} not found";
             HTMLContent(response);
             SendHttp(response);
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
-        private static void sendOkResponse(HttpResponse response)
+        private static void SendApiBadlyFormed(HttpResponse response, string uri)
+        {
+            response.ResponseCode = $"501 API {uri} badly formed. Must start with 'API/'";
+            HTMLContent(response);
+            SendHttp(response);
+        }
+
+        private static void SendFileNotFound(HttpResponse response, string filename)
+        {
+            response.ResponseCode = $"404 File {filename} not found";
+            HTMLContent(response);
+            SendHttp(response);
+        }
+
+        private static void SendServerError(HttpResponse response)
+        {
+            response.ResponseCode = "500 Internal web-server error";
+            HTMLContent(response);
+            SendHttp(response);
+        }
+
+        private static void SendOkResponse(HttpResponse response)
         {
             response.ResponseCode = "200 OK";
             SendHttp(response);
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
         private static void SendHttp(HttpResponse response)
         {
             // Convert the string data to byte data using ASCII encoding.
@@ -464,8 +483,6 @@ namespace Orts.Viewer3D.WebServices
                                              response.ClientSocket);
         }
 
-        // ===========================================================================================
-        // ===========================================================================================
         private static void SendHttpCallback(IAsyncResult ar)
         {
             try
@@ -485,22 +502,8 @@ namespace Orts.Viewer3D.WebServices
             }
         }
 
-        // ===========================================================================================
-        // 		API routing classes & functions
-        // ===========================================================================================
-        public static Dictionary<string, Func<string, object>> ApiDict = new Dictionary<string, Func<string, object>>();
-
-        public static string ExecuteApi(string apiName, string Parameters)
-        {
-            Func<string, object> apiMethod;
-            if (!ApiDict.TryGetValue(apiName, out apiMethod))
-            {
-                Console.WriteLine("Not Found"); //TODO
-            }
-            object result = apiMethod(Parameters);
-            string json = JsonConvert.SerializeObject(result, Formatting.Indented);
-            return json;
-        }
+        // API routing classes & functions
+        public static Dictionary<string, Func<string, object>> ApiDict = new Dictionary<string, Func<string, object>>(StringComparer.InvariantCultureIgnoreCase);
 
         // =======================================================================================
         // 		API for Sample Data
@@ -567,6 +570,9 @@ namespace Orts.Viewer3D.WebServices
         // -------------------------------------------------------------------------------------------
         public object ApiHUD(string Parameters)
         {
+            if (Parameters == null)
+                return (null);
+
             int index = Parameters.IndexOf('=');
             if (index == -1)
                 return (null);
