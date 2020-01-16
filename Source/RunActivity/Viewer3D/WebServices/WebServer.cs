@@ -50,7 +50,7 @@ namespace Orts.Viewer3D.WebServices
         public Dictionary<string, string> Headers { get => headers; set => headers = value; }
     }
 
-    // class for holding HTTP Resonse data
+    // class for holding HTTP Response data
     public class HttpResponse
     {
         public Socket ClientSocket = null;
@@ -75,7 +75,7 @@ namespace Orts.Viewer3D.WebServices
         // Thread signal.
         private static ManualResetEvent allDone = new ManualResetEvent(false);
 
-        // File extensions this server will handle - any other extensions are returns as not found
+        // File extensions this server will handle - any other extensions are returned as not found
         private static Dictionary<string, string> extensions = new Dictionary<string, string>()
         {
             { "HTM",  "text/html" },
@@ -369,11 +369,11 @@ namespace Orts.Viewer3D.WebServices
                 {
                     // Append a default webpage
                     fullFilePath += "index.html";
-                    if (!File.Exists(fullFilePath))
-                    {
-                        SendFileNotFound(response, ContentPath + filePath);
-                        return;
-                    }
+                }
+                if (!File.Exists(fullFilePath))
+                {
+                    SendFileNotFound(response, ContentPath + filePath);
+                    return;
                 }
             }
 
@@ -397,7 +397,7 @@ namespace Orts.Viewer3D.WebServices
             return;
         }
 
-        private static void HTMLContent(HttpResponse response)
+        private static void HTMLContent(HttpResponse response, string embed)
         {
             response.strContent = "<!doctype HTML>" +
                                   "<html>" +
@@ -407,50 +407,50 @@ namespace Orts.Viewer3D.WebServices
                                   "</head>" +
                                   "<body>" +
                                   "<h1>OpenRails WebServer</h1>" +
-                                  "<div>" + response.ResponseCode + "</div>" + "" +
+                                  "<div>" + embed + "</div>" + "" +
                                   "</body></html>";
             return;
         }
 
         private static void SendRequestMethodNotImplemented(HttpResponse response)
         {
-            response.ResponseCode = $"501 Request method not implemented";
-            HTMLContent(response);
+            response.ResponseCode = "200 OK";
+            HTMLContent(response, $"501 Request method not implemented");
             SendHttp(response);
         }
 
         private static void SendExtensionNotImplemented(HttpResponse response, string extension)
         {
-            response.ResponseCode = $"501 Extension {extension} not implemented";
-            HTMLContent(response);
+            response.ResponseCode = "200 OK";
+            HTMLContent(response, $"501 Extension {extension} not implemented");
             SendHttp(response);
         }
 
         private static void SendApiNotFound(HttpResponse response, string apiName)
         {
-            response.ResponseCode = $"501 API {apiName} not found";
-            HTMLContent(response);
+            response.ResponseCode = "200 OK";
+            HTMLContent(response, $"501 API {apiName} not found");
             SendHttp(response);
         }
 
         private static void SendApiBadlyFormed(HttpResponse response, string uri)
         {
-            response.ResponseCode = $"501 API {uri} badly formed. Must start with 'API/'";
-            HTMLContent(response);
+            response.ResponseCode = "200 OK";
+            HTMLContent(response, $"501 API {uri} badly formed. Must start with 'API/'");
             SendHttp(response);
         }
 
         private static void SendFileNotFound(HttpResponse response, string filename)
         {
-            response.ResponseCode = $"404 File {filename} not found";
-            HTMLContent(response);
+            response.ResponseCode = "200 OK";
+            HTMLContent(response, $"404 File {filename} not found");
             SendHttp(response);
         }
 
         private static void SendServerError(HttpResponse response)
         {
-            response.ResponseCode = "500 Internal web-server error";
-            HTMLContent(response);
+            response.ResponseCode = "200 OK";
+            HTMLContent(response, "500 Internal web-server error");
             SendHttp(response);
         }
 

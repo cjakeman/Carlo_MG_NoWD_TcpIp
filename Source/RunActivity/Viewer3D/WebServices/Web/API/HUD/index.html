@@ -2,19 +2,16 @@
 <html lang="en">
 <head>
 	<meta charset="utf-8"/>
-	<title>OPEN RAILS - Heads Up Display - Common Page</title>
-    <link rel="stylesheet" type="text/css" href="hud.css">
-	<script src="hud.js"></script>
+	<meta name="viewport" content="width=device-width, initial-scale=1"><!-- adds zooming for mobiles -->
+	<title>Open Rails - Heads Up Display (HUD) - Common Page</title>
+	<link rel="shortcut icon" type="image/png" href="or_logo.png"><!-- This icon appears in the page's tab and its bookmark. -->
+  <link rel="stylesheet" type="text/css" href="index.css">
+	<script src="index.js"></script>
 </head>
 
-<!--
-setInterval() is not preferred as setInterval(<funtionName>, timeMs) does not wait for the named function to complete.
-Creating web requests more quickly than they are handled will fill the request queue and can cause the browser to 
-become unresponsive. See http://reallifejs.com/brainchunks/repeated-events-timeout-or-interval/
-
-<body onload="setInterval(HeadsUp, 500)" >
--->
 <body onload="poll(500)" ><!-- 500 mSec is the default and may be omitted -->
+
+<img src="or_logoXXX.png"/>
 
 <ul>
   <li><a id="common">Common</a></li>
@@ -32,25 +29,25 @@ become unresponsive. See http://reallifejs.com/brainchunks/repeated-events-timeo
 <br>
 <script>
 document.getElementById("common").onclick = function (){
-	PageNo = 0;
+	pageNo = 0;
 }
 document.getElementById("consist").onclick = function (){
-	PageNo = 1;
+	pageNo = 1;
 }
 document.getElementById("locomotive").onclick = function (){
-	PageNo = 2;
+	pageNo = 2;
 }
 document.getElementById("brake").onclick = function (){
-	PageNo = 3;
+	pageNo = 3;
 }
 document.getElementById("force").onclick = function (){
-	PageNo = 4;
+	pageNo = 4;
 }
 document.getElementById("dispatcher").onclick = function (){
-	PageNo = 5;
+	pageNo = 5;
 }
 document.getElementById("debug").onclick = function (){
-	PageNo = 6;
+	pageNo = 6;
 }
 </script>
 </body>
