@@ -104,10 +104,9 @@ namespace Orts.Viewer3D.WebServices
             Port = port;
             ContentPath = path;
             MaxConnections = maxConnections;
-            ApiDict.Add("/API/HUD", ApiHUD);
-            ApiDict.Add("/API/APISAMPLE", ApiSample);
-            ApiDict.Add("/API/TRACKMONITOR", ApiTrackMonitor);
-            ApiDict.Add("/API/TRAININFO", ApiTrainInfo);
+            ApiDict.Add("/API/HUD", ApiHud);
+            ApiDict.Add("/API/TEMPLATE", ApiTemplate);
+            ApiDict.Add("/API/TRAIN", ApiTrain);
             return;
         }
 
@@ -281,7 +280,7 @@ namespace Orts.Viewer3D.WebServices
                     //ServerSocket.Shutdown(SocketShutdown.Both);
                     //tcpListener.Stop();
                     ServerSocket.Close();
-                    
+
                 }
                 catch (Exception e)
                 {
@@ -337,7 +336,7 @@ namespace Orts.Viewer3D.WebServices
 
             SendFileContents(response, uri);
         }
-        
+
         private static void ExecuteAPI(string uri, string parameters, HttpResponse response)
         {
             var apiName = uri.Substring(0, uri.Length - "/CALL_API".Length);
@@ -505,17 +504,14 @@ namespace Orts.Viewer3D.WebServices
         // API routing classes & functions
         public static Dictionary<string, Func<string, object>> ApiDict = new Dictionary<string, Func<string, object>>(StringComparer.InvariantCultureIgnoreCase);
 
-        // =======================================================================================
-        // 		API for Sample Data
-        // =======================================================================================
-
-
+        // API for Template Data
         public class Embedded
         {
             public string Str;
             public int Numb;
         }
-        public class ApiSampleData
+
+        public class ApiTemplateData
         {
             public int intData;
             public string strData;
@@ -524,10 +520,9 @@ namespace Orts.Viewer3D.WebServices
             public string[] strArrayData;
         }
 
-        // -------------------------------------------------------------------------------------------
-        public object ApiSample(string Parameters)
+        public object ApiTemplate(string Parameters)
         {
-            ApiSampleData sampleData = new ApiSampleData();
+            var sampleData = new ApiTemplateData();
 
             sampleData.intData = 576;
             sampleData.strData = "Sample String";
@@ -539,36 +534,38 @@ namespace Orts.Viewer3D.WebServices
 
             sampleData.strArrayData = new string[5];
 
-            sampleData.strArrayData[0] = "First member";
-            sampleData.strArrayData[1] = "Second member";
-            sampleData.strArrayData[2] = "Third Member";
-            sampleData.strArrayData[3] = "Forth member";
-            sampleData.strArrayData[4] = "Fifth member";
+            sampleData.strArrayData[0] = "First item";
+            sampleData.strArrayData[1] = "Second item";
+            sampleData.strArrayData[2] = "Third item";
+            sampleData.strArrayData[3] = "Forth item";
+            sampleData.strArrayData[4] = "Fifth item";
 
             return (sampleData);
         }
 
-        // =======================================================================================
-        // 		API to display the HUD Windows
-        // ======================================================================================= 
-        public class HudApiTable
+        // API to display the HUD Windows
+        public class ApiHudTable
         {
             public int nRows;
             public int nCols;
             public string[] values;
+
+            public ApiHudTable(int nRows, int nCols, string[] values)
+            {
+                this.nRows = nRows;
+                this.nCols = nCols;
+                this.values = values;
+            }
         }
 
-        // -------------------------------------------------------------------------------------------
         public class HudApiArray
         {
             public int nTables;
-            public HudApiTable commonTable;
-            public HudApiTable extraTable;
+            public ApiHudTable commonTable;
+            public ApiHudTable extraTable;
         }
 
-
-        // -------------------------------------------------------------------------------------------
-        public object ApiHUD(string Parameters)
+        public object ApiHud(string Parameters)
         {
             if (Parameters == null)
                 return (null);
@@ -580,40 +577,37 @@ namespace Orts.Viewer3D.WebServices
             strPageno = strPageno.Trim();
             int pageNo = Int32.Parse(strPageno);
 
-            HudApiArray hudApiArray = new HudApiArray();
-            hudApiArray.nTables = 1;
-
-            hudApiArray.commonTable = ApiHUD_ProcessTable(0);
-            if (pageNo > 0)
+            var hudApiArray = new HudApiArray();
+            
+            hudApiArray.commonTable = ApiProcessHudTable(0);
+            if (pageNo == 0)
+            {
+                hudApiArray.nTables = 1;
+                hudApiArray.extraTable = null;
+            }
+            else
             {
                 hudApiArray.nTables = 2;
-                hudApiArray.extraTable = ApiHUD_ProcessTable(pageNo);
+                hudApiArray.extraTable = ApiProcessHudTable(pageNo);
             }
             return hudApiArray;
         }
 
-        // -------------------------------------------------------------------------------------------
-        public HudApiTable ApiHUD_ProcessTable(int pageNo)
+        public ApiHudTable ApiProcessHudTable(int pageNo)
         {
-            int nRows = 0;
-            int nCols = 0;
-            int nextCell = 0;
-
             Viewer3D.Popups.HUDWindow.TableData hudTable = viewer.HUDWindow.PrepareTable(pageNo);
 
-            HudApiTable apiTable = new HudApiTable();
-
-            apiTable.nRows = hudTable.Cells.GetLength(0);
-            nRows = apiTable.nRows;
-            apiTable.nCols = hudTable.Cells.GetLength(1);
-            nCols = apiTable.nCols;
-            apiTable.values = new string[nRows * nCols];
-
+            var apiTable = new ApiHudTable
+                ( hudTable.Cells.GetLength(0)
+                , hudTable.Cells.GetLength(1)
+                , new string[hudTable.Cells.GetLength(0) * hudTable.Cells.GetLength(1)]
+                );
             try
             {
-                for (int i = 0; i < nRows; ++i)
+                var nextCell = 0;
+                for (int i = 0; i < apiTable.nRows; ++i)
                 {
-                    for (int j = 0; j < nCols; ++j)
+                    for (int j = 0; j < apiTable.nCols; ++j)
                     {
                         apiTable.values[nextCell++] = hudTable.Cells[i, j];
                     }
@@ -626,29 +620,33 @@ namespace Orts.Viewer3D.WebServices
             return (apiTable);
         }
 
-        // =======================================================================================
-        // 		API for Track Monitor Data
-        // =======================================================================================
-
-        // -------------------------------------------------------------------------------------------
-        public object ApiTrackMonitor(string Parameters)
+        // API for Train
+        public class ApiTrainInfo
         {
-            Train.TrainInfo trainInfo = viewer.PlayerTrain.GetTrainInfo();
-
-            return (trainInfo);
-
+            public Train.TRAIN_CONTROL controlMode;          // present control mode 
+            public float speedMpS;                           // present speed
+            public float projectedSpeedMpS;                  // projected speed
+            public float allowedSpeedMpS;                    // max allowed speed
+            public float currentElevationPercent;            // elevation %
+            public int direction;                            // present direction (0=forward, 1=backward)
+            public int cabOrientation;                       // present cab orientation (0=forward, 1=backward)
+            public bool isOnPath;                            // train is on defined path (valid in Manual mode only)
         }
 
-        // =======================================================================================
-        // 		API for Train Info
-        // =======================================================================================
-
-        // -------------------------------------------------------------------------------------------
-        public object ApiTrainInfo(string Parameters)
+        public object ApiTrain(string Parameters)
         {
-            Train.TrainInfo trainInfo = viewer.PlayerTrain.GetTrainInfo();
+            var trainInfo = viewer.PlayerTrain.GetTrainInfo();
 
-            return (trainInfo);
+            return new ApiTrainInfo
+            { controlMode = trainInfo.ControlMode
+            , speedMpS = trainInfo.speedMpS
+            , projectedSpeedMpS = trainInfo.projectedSpeedMpS
+            , allowedSpeedMpS = trainInfo.allowedSpeedMpS
+            , currentElevationPercent = trainInfo.currentElevationPercent
+            , direction = trainInfo.direction
+            , cabOrientation = trainInfo.cabOrientation
+            , isOnPath = trainInfo.isOnPath
+            };
         }
     }
 }

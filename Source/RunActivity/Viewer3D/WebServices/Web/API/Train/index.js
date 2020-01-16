@@ -1,3 +1,19 @@
+﻿var PageNo = 0;
+var hr = new XMLHttpRequest;
+
+function ApiTrainInfo() {
+    hr.open("POST", "/API/TRAININFO", true);
+    hr.send("pageno=" + PageNo);
+    hr.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+            var obj = JSON.parse(hr.responseText);
+
+            strTrainInfoData.innerHTML = obj.allowedSpeedMps;
+
+        }
+    }
+}
+
 // COPYRIGHT 2009, 2010, 2011, 2012, 2013, 2014 by the Open Rails project.
 //
 // This file is part of Open Rails.
@@ -35,18 +51,16 @@ function poll(initialIdleMs) {
 	
 	// setTimeout() used instead of setInterval() to avoid overloading the browser's queue.
 	// (It's not true recursion, so it won't blow the stack.)
-	setTimeout(poll, idleMs); // In this call, initialIdleMs == null
+    setTimeout(poll, idleMs); // In this call, initialIdleMs == null
 }
-
-var pageNo = 0;
 
 function api() {
 	// If this file is located in folder /API/<API_name>/, then Open Rails will call the API with the signature "/API/<API_name"
 
 	// GET preferred over POST as Internet Explorer may then fail intermittently with network error 00002eff
 	// hr.open("post", "call_API", true);
-	// hr.send("pageno="+pageNo);
-	hr.open("GET", "call_API?pageNo="+pageNo, true);
+	// hr.send(""");
+	hr.open("GET", "call_API", true);
 	hr.send();
 	
 	hr.onreadystatechange = function () {
@@ -54,48 +68,17 @@ function api() {
 			var obj = JSON.parse(hr.responseText);
 			if (obj != null) // Can happen using IEv11
 			{
-				var rows = obj.commonTable.nRows;
-				var cols = obj.commonTable.nCols;
-				Str = "<table>";  
-				var next = 0;
-				for (var row = 0; row < obj.commonTable.nRows; ++row) {
-					Str += "<tr>";
-					for (var col=0; col < obj.commonTable.nCols; ++col) { 
-						if (obj.commonTable.values[next] == null) {
-							Str += "<td></td>";
-						}
-						else {
-							Str += "<td>" + obj.commonTable.values[next] + "</td>";
-						}
-						++next;
-					}
-					Str += "</tr>";
-				}
-				Str += "</table>";
-				HUDCommon.innerHTML = Str;
-
-				if (obj.nTables == 2) {
-					var rows = obj.extraTable.nRows;
-					var cols = obj.extraTable.nCols;
-					next = 0;
-					Str = "<table>";  
-					for (var row = 0; row < obj.extraTable.nRows; ++row) {
-						Str += "<tr>";
-						for (var col=0; col < obj.extraTable.nCols; ++col) { 
-							if (obj.extraTable.values[next] == null) {
-								Str += "<td></td>";
-							}
-							else {
-								Str += "<td>"  + obj.extraTable.values[next] + "</td>";
-							}
-							++next;
-						}
-						Str += "</tr>";
-					}
-					Str += "</table>";
-					HUDExtra.innerHTML = Str;
-				}
-			}
+                controlMode.innerHTML = modes[obj.controlMode];
+                speedMpS.innerHTML = obj.speedMpS.toFixed(1);
+                projectedSpeedMpS.innerHTML = obj.projectedSpeedMpS.toFixed(1);
+                allowedSpeedMpS.innerHTML = obj.allowedSpeedMpS.toFixed(1);
+                currentElevationPercent.innerHTML = obj.currentElevationPercent.toFixed(1);
+                direction.innerHTML = obj.direction;
+                cabOrientation.innerHTML = obj.cabOrientation;
+                isOnPath.innerHTML = obj.isOnPath;
+            }
 		}
 	}
 }
+
+modes = ["AUTO_SIGNAL", "AUTO_NODE", "MANUAL", "EXPLORER", "OUT_OF_CONTROL", "INACTIVE", "TURNTABLE", "UNDEFINED"];
