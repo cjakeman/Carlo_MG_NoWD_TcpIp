@@ -11,20 +11,20 @@
 </head>
 
 <body onload="poll(500)" ><!-- 500 mSec is the default and may be omitted -->
-
-<ul>
-  <li><a id="common">Common</a></li>
-  <li><a id="consist">Consist</a></li>
-  <li><a id="locomotive">Locomotive</a></li>
-  <li><a id="brake">Brake</a></li>
-  <li><a id="force">Force</a></li>
-  <li><a id="dispatcher">Dispatcher</a></li>
-  <li><a id="debug">Debug</a></li>
-</ul>
-<br><h2>Open Rails - Heads Up Display</h2>
-<br><div id="HUDCommon"></div>
-<br><h2 id="ExtraHeading"></h2>
-<br><div id="HUDExtra"></div>
+  <ul>
+    <li><a id="common">Common</a></li>
+    <li><a id="consist">Consist</a></li>
+    <li><a id="locomotive">Locomotive</a></li>
+    <li><a id="brake">Brake</a></li>
+    <li><a id="force">Force</a></li>
+    <li><a id="dispatcher">Dispatcher</a></li>
+    <li><a id="debug">Debug</a></li>
+  </ul>
+  <div id=menu><a href="/">Back to Menu</a></div>
+  <h2>Open Rails - Heads Up Display</h2>
+  <br><div id="HUDCommon"></div>
+  <br><h2 id="ExtraHeading"></h2>
+  <br><div id="HUDExtra"></div>
 <script>
 document.getElementById("common").onclick = function (){
 	pageNo = 0;

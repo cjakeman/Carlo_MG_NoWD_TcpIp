@@ -106,7 +106,7 @@ namespace Orts.Viewer3D.WebServices
             MaxConnections = maxConnections;
             ApiDict.Add("/API/HUD", ApiHud);
             ApiDict.Add("/API/TEMPLATE", ApiTemplate);
-            ApiDict.Add("/API/TRAIN", ApiTrain);
+            ApiDict.Add("/API/TRACKMONITOR", ApiTrackMonitor);
             return;
         }
 
@@ -355,30 +355,44 @@ namespace Orts.Viewer3D.WebServices
 
         private static void SendFileContents(HttpResponse response, string uri)
         {
-
             // Convert URL to folder specification
             var filePath = uri.Replace("/", @"\");
 
             var fullFilePath = ContentPath + filePath;
+            var extension = Path.GetExtension(fullFilePath).ToUpper();
 
-            if (!File.Exists(fullFilePath))
+            if ( ! File.Exists(fullFilePath))
             {
                 // Perhaps it's a folder
-                if (fullFilePath.EndsWith(@"\"))
+                if (extension == "")
                 {
-                    // Append a default webpage
-                    fullFilePath += "index.html";
+                    // Note: Can accept URL = "/API/HUD/" which get extended to "/API/HUD/index.html"
+                    // Cannot accept URL = "/API/HUD". If we did, then the browser would interpret  
+                    //  <script src="index.js"></script>
+                    // as "/API/index.js"
+
+                    if (fullFilePath.EndsWith(@"\"))
+                    {
+                        // Append a default webpage
+                        var fullFilePath1 = fullFilePath;
+                        fullFilePath += "index.html";
+
+                        if (!File.Exists(fullFilePath))
+                        {  // The URL+index.html doesn't exist as a file
+                            SendFileNotFound(response, fullFilePath1, fullFilePath);
+                            return;
+                        }
+                        extension = Path.GetExtension(fullFilePath).ToUpper();
+                    }
                 }
-                if (!File.Exists(fullFilePath))
-                {
-                    SendFileNotFound(response, ContentPath + filePath);
+                else
+                {   // The URL doesn't exist as a file
+                    SendFileNotFound(response, fullFilePath);
                     return;
                 }
             }
 
             // Check the extension
-            var extension = Path.GetExtension(fullFilePath).ToUpper();
-
             // Remove the leading "."
             extension = extension.Replace(".", "");
             if (!extensions.ContainsKey(extension))
@@ -439,10 +453,13 @@ namespace Orts.Viewer3D.WebServices
             SendHttp(response);
         }
 
-        private static void SendFileNotFound(HttpResponse response, string filename)
+        private static void SendFileNotFound(HttpResponse response, string filePath1, string filePath2 = null)
         {
             response.ResponseCode = "200 OK";
-            HTMLContent(response, $"404 File {filename} not found");
+            HTMLContent(response, 
+                (filePath2 == null) 
+                ? $"404 File \"{filePath1}\" not found"
+                : $"404 Neither file \"{filePath1}\" nor \"{filePath2}\" found");
             SendHttp(response);
         }
 
@@ -621,7 +638,7 @@ namespace Orts.Viewer3D.WebServices
         }
 
         // API for Train
-        public class ApiTrainInfo
+        public class TrackMonitorInfo
         {
             public Train.TRAIN_CONTROL controlMode;          // present control mode 
             public float speedMpS;                           // present speed
@@ -633,11 +650,11 @@ namespace Orts.Viewer3D.WebServices
             public bool isOnPath;                            // train is on defined path (valid in Manual mode only)
         }
 
-        public object ApiTrain(string Parameters)
+        public object ApiTrackMonitor(string Parameters)
         {
             var trainInfo = viewer.PlayerTrain.GetTrainInfo();
 
-            return new ApiTrainInfo
+            return new TrackMonitorInfo
             { controlMode = trainInfo.ControlMode
             , speedMpS = trainInfo.speedMpS
             , projectedSpeedMpS = trainInfo.projectedSpeedMpS

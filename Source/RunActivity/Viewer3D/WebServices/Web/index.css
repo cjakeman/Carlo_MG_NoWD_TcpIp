@@ -2,3 +2,6 @@
 body {
   font-family: Verdana, Helvetica, sans-serif;
 }
+#menu {
+  padding: 20px; 
+}
