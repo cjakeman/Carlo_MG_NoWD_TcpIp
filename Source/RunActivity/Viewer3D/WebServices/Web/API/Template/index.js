@@ -35,7 +35,7 @@ function poll(initialIdleMs) {
 	
 	// setTimeout() used instead of setInterval() to avoid overloading the browser's queue.
 	// (It's not true recursion, so it won't blow the stack.)
-    setTimeout(poll, idleMs); // In this call, initialIdleMs == null
+	setTimeout(poll, idleMs); // In this call, initialIdleMs == null
 }
 
 function api() {
@@ -43,26 +43,39 @@ function api() {
 
 	// GET preferred over POST as Internet Explorer may then fail intermittently with network error 00002eff
 	// hr.open("post", "call_API", true);
-	// hr.send(""");
+	// hr.send();
 	hr.open("GET", "call_API", true);
 	hr.send();
-	
 	hr.onreadystatechange = function () {
 		if (this.readyState == xmlHttpRequestCodeDone && this.status == httpCodeSuccess) {
 			var obj = JSON.parse(hr.responseText);
 			if (obj != null) // Can happen using IEv11
 			{
-                controlMode.innerHTML = modes[obj.controlMode];
-                speedMpS.innerHTML = obj.speedMpS.toFixed(1);
-                projectedSpeedMpS.innerHTML = obj.projectedSpeedMpS.toFixed(1);
-                allowedSpeedMpS.innerHTML = obj.allowedSpeedMpS.toFixed(1);
-                currentElevationPercent.innerHTML = obj.currentElevationPercent.toFixed(1);
-                direction.innerHTML = obj.direction;
-                cabOrientation.innerHTML = obj.cabOrientation;
-                isOnPath.innerHTML = obj.isOnPath;
-            }
+				var obj = JSON.parse(hr.responseText);
+				
+				// Shows a way to pass various data types and arrays and lists to HTML
+				// Recommend Vue.js for anything complex
+				boolData.innerHTML = obj.boolData;
+				intData.innerHTML = obj.intData;
+				floatData.innerHTML = obj.floatData;
+				strData.innerHTML = obj.strData;
+				dateData.innerHTML = obj.dateData;
+
+				customObjectStr.innerHTML = obj.customObject.Str;
+				customObjectInt.innerHTML = obj.customObject.Int;
+
+				arrayData = obj.strArrayData;
+				arrayItem0.innerHTML = obj.strArrayData[0];
+				arrayItem1.innerHTML = obj.strArrayData[1];
+				arrayItem2.innerHTML = obj.strArrayData[2];
+				arrayItem3.innerHTML = obj.strArrayData[3];
+				arrayItem4.innerHTML = obj.strArrayData[4];
+
+				intList = obj.intList;
+				intList0.innerHTML = obj.intList[0];
+				intList1.innerHTML = obj.intList[1];
+				intList2.innerHTML = obj.intList[2];
+			}
 		}
 	}
 }
-
-modes = ["AUTO_SIGNAL", "AUTO_NODE", "MANUAL", "EXPLORER", "OUT_OF_CONTROL", "INACTIVE", "TURNTABLE", "UNDEFINED"];

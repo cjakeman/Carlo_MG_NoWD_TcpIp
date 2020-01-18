@@ -17,6 +17,7 @@
 //
 // Based on original work by Dan Reynolds 2017-12-21
 
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -25,9 +26,6 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
-using Newtonsoft.Json;
-using Orts.Simulation;
-using Orts.Simulation.Physics;
 
 namespace Orts.Viewer3D.WebServices
 {
@@ -71,6 +69,7 @@ namespace Orts.Viewer3D.WebServices
         private IPAddress ipAddress = null;
         private int Port = 0;
         private int MaxConnections = 0;
+        private WebApi WebApi;
 
         // Thread signal.
         private static ManualResetEvent allDone = new ManualResetEvent(false);
@@ -94,7 +93,7 @@ namespace Orts.Viewer3D.WebServices
 
         public Dictionary<string, string> Extensions { get => extensions; set => extensions = value; }
 
-        // Viewer object from Viewer3D - needed for access to Heads Up Display Data
+        // Viewer object from Viewer3D - needed by APIs
         public Viewer viewer;
 
         // WebServer constructor
@@ -104,9 +103,7 @@ namespace Orts.Viewer3D.WebServices
             Port = port;
             ContentPath = path;
             MaxConnections = maxConnections;
-            ApiDict.Add("/API/HUD", ApiHud);
-            ApiDict.Add("/API/TEMPLATE", ApiTemplate);
-            ApiDict.Add("/API/TRACKMONITOR", ApiTrackMonitor);
+            WebApi = new WebApi();
             return;
         }
 
@@ -118,6 +115,9 @@ namespace Orts.Viewer3D.WebServices
             // Viewer is not yet initialized in the GameState object - wait until it is
             while ((viewer = Program.Viewer) == null)
                 Thread.Sleep(1000);
+
+            // Pass the viewer so that APIs can access its data
+            WebApi.Viewer = viewer;
 
             try
             {
@@ -339,9 +339,11 @@ namespace Orts.Viewer3D.WebServices
 
         private static void ExecuteAPI(string uri, string parameters, HttpResponse response)
         {
-            var apiName = uri.Substring(0, uri.Length - "/CALL_API".Length);
+            // Trim off the final "CALL_API"
+            var apiName = uri.Substring(0, uri.Length - "CALL_API".Length);
+
             Func<string, object> apiMethod;
-            if (!ApiDict.TryGetValue(apiName, out apiMethod))
+            if (!WebApi.ApiDict.TryGetValue(apiName, out apiMethod))
             {
                 SendApiNotFound(response, uri);
                 return;
@@ -383,6 +385,11 @@ namespace Orts.Viewer3D.WebServices
                             return;
                         }
                         extension = Path.GetExtension(fullFilePath).ToUpper();
+                    }
+                    else
+                    {   // The URL doesn't exist as a file
+                        SendFileNotFound(response, fullFilePath);
+                        return;
                     }
                 }
                 else
@@ -516,154 +523,6 @@ namespace Orts.Viewer3D.WebServices
             {
                 Console.WriteLine("Exception Send CallBack: " + e.ToString());
             }
-        }
-
-        // API routing classes & functions
-        public static Dictionary<string, Func<string, object>> ApiDict = new Dictionary<string, Func<string, object>>(StringComparer.InvariantCultureIgnoreCase);
-
-        // API for Template Data
-        public class Embedded
-        {
-            public string Str;
-            public int Numb;
-        }
-
-        public class ApiTemplateData
-        {
-            public int intData;
-            public string strData;
-            public DateTime dateData;
-            public Embedded embedded;
-            public string[] strArrayData;
-        }
-
-        public object ApiTemplate(string Parameters)
-        {
-            var sampleData = new ApiTemplateData();
-
-            sampleData.intData = 576;
-            sampleData.strData = "Sample String";
-            sampleData.dateData = new DateTime(2018, 1, 1);
-
-            sampleData.embedded = new Embedded();
-            sampleData.embedded.Str = "Embeddded String";
-            sampleData.embedded.Numb = 123;
-
-            sampleData.strArrayData = new string[5];
-
-            sampleData.strArrayData[0] = "First item";
-            sampleData.strArrayData[1] = "Second item";
-            sampleData.strArrayData[2] = "Third item";
-            sampleData.strArrayData[3] = "Forth item";
-            sampleData.strArrayData[4] = "Fifth item";
-
-            return (sampleData);
-        }
-
-        // API to display the HUD Windows
-        public class ApiHudTable
-        {
-            public int nRows;
-            public int nCols;
-            public string[] values;
-
-            public ApiHudTable(int nRows, int nCols, string[] values)
-            {
-                this.nRows = nRows;
-                this.nCols = nCols;
-                this.values = values;
-            }
-        }
-
-        public class HudApiArray
-        {
-            public int nTables;
-            public ApiHudTable commonTable;
-            public ApiHudTable extraTable;
-        }
-
-        public object ApiHud(string Parameters)
-        {
-            if (Parameters == null)
-                return (null);
-
-            int index = Parameters.IndexOf('=');
-            if (index == -1)
-                return (null);
-            string strPageno = Parameters.Substring(index + 1, Parameters.Length - index - 1);
-            strPageno = strPageno.Trim();
-            int pageNo = Int32.Parse(strPageno);
-
-            var hudApiArray = new HudApiArray();
-            
-            hudApiArray.commonTable = ApiProcessHudTable(0);
-            if (pageNo == 0)
-            {
-                hudApiArray.nTables = 1;
-                hudApiArray.extraTable = null;
-            }
-            else
-            {
-                hudApiArray.nTables = 2;
-                hudApiArray.extraTable = ApiProcessHudTable(pageNo);
-            }
-            return hudApiArray;
-        }
-
-        public ApiHudTable ApiProcessHudTable(int pageNo)
-        {
-            Viewer3D.Popups.HUDWindow.TableData hudTable = viewer.HUDWindow.PrepareTable(pageNo);
-
-            var apiTable = new ApiHudTable
-                ( hudTable.Cells.GetLength(0)
-                , hudTable.Cells.GetLength(1)
-                , new string[hudTable.Cells.GetLength(0) * hudTable.Cells.GetLength(1)]
-                );
-            try
-            {
-                var nextCell = 0;
-                for (int i = 0; i < apiTable.nRows; ++i)
-                {
-                    for (int j = 0; j < apiTable.nCols; ++j)
-                    {
-                        apiTable.values[nextCell++] = hudTable.Cells[i, j];
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Trace.WriteLine(e.Message);
-            }
-            return (apiTable);
-        }
-
-        // API for Train
-        public class TrackMonitorInfo
-        {
-            public Train.TRAIN_CONTROL controlMode;          // present control mode 
-            public float speedMpS;                           // present speed
-            public float projectedSpeedMpS;                  // projected speed
-            public float allowedSpeedMpS;                    // max allowed speed
-            public float currentElevationPercent;            // elevation %
-            public int direction;                            // present direction (0=forward, 1=backward)
-            public int cabOrientation;                       // present cab orientation (0=forward, 1=backward)
-            public bool isOnPath;                            // train is on defined path (valid in Manual mode only)
-        }
-
-        public object ApiTrackMonitor(string Parameters)
-        {
-            var trainInfo = viewer.PlayerTrain.GetTrainInfo();
-
-            return new TrackMonitorInfo
-            { controlMode = trainInfo.ControlMode
-            , speedMpS = trainInfo.speedMpS
-            , projectedSpeedMpS = trainInfo.projectedSpeedMpS
-            , allowedSpeedMpS = trainInfo.allowedSpeedMpS
-            , currentElevationPercent = trainInfo.currentElevationPercent
-            , direction = trainInfo.direction
-            , cabOrientation = trainInfo.cabOrientation
-            , isOnPath = trainInfo.isOnPath
-            };
         }
     }
 }
